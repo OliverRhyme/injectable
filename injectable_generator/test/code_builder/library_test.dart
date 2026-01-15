@@ -50,14 +50,55 @@ extension GetItInjectableX on GetIt {
 }
 ''');
     });
+
+    test("Multiple registrations generates enablement call", () {
+      final result = generate(
+        [DependencyConfig.factory('Demo')],
+        allowMultipleRegistrations: true,
+      );
+      expect(result, contains('getIt.enableRegisteringMultipleInstancesOfOneType()'));
+    });
+
+    test("Multiple registrations with extension generates enablement call", () {
+      final result = generate(
+        [DependencyConfig.factory('Demo')],
+        asExt: true,
+        allowMultipleRegistrations: true,
+      );
+      expect(result, contains('this.enableRegisteringMultipleInstancesOfOneType()'));
+    });
+
+    test("Multiple registrations is not generated for micro packages", () {
+      final result = generate(
+        [DependencyConfig.factory('Demo')],
+        microPackageName: 'TestPackage',
+        allowMultipleRegistrations: true,
+      );
+      expect(result, isNot(contains('enableRegisteringMultipleInstancesOfOneType')));
+    });
+
+    test("Multiple registrations is not generated when disabled", () {
+      final result = generate(
+        [DependencyConfig.factory('Demo')],
+        allowMultipleRegistrations: false,
+      );
+      expect(result, isNot(contains('enableRegisteringMultipleInstancesOfOneType')));
+    });
   });
 }
 
-String generate(List<DependencyConfig> input, {bool asExt = false}) {
+String generate(
+  List<DependencyConfig> input, {
+  bool asExt = false,
+  String? microPackageName,
+  bool allowMultipleRegistrations = false,
+}) {
   final library = LibraryGenerator(
     dependencies: List.of(input),
     initializerName: 'init',
     asExtension: asExt,
+    microPackageName: microPackageName,
+    allowMultipleRegistrations: allowMultipleRegistrations,
   ).generate();
   final emitter = DartEmitter(
     allocator: Allocator.none,

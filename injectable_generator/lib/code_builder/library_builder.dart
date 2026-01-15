@@ -93,6 +93,8 @@ class LibraryGenerator with SharedGeneratorCode {
   final Set<ExternalModuleConfig> microPackagesModulesBefore,
       microPackagesModulesAfter;
 
+  final bool allowMultipleRegistrations;
+
   LibraryGenerator({
     required List<DependencyConfig> dependencies,
     required this.initializerName,
@@ -102,6 +104,7 @@ class LibraryGenerator with SharedGeneratorCode {
     this.microPackagesModulesBefore = const {},
     this.microPackagesModulesAfter = const {},
     this.usesConstructorCallback = false,
+    this.allowMultipleRegistrations = false,
   }) : dependencies = DependencyList(dependencies: dependencies);
 
   Library generate() {
@@ -158,7 +161,8 @@ class LibraryGenerator with SharedGeneratorCode {
                     scopedBeforeExternalModules[scope]?.toSet() ?? const {},
                 microPackagesModulesAfter:
                     scopedAfterExternalModules[scope]?.toSet() ?? const {},
-                usesConstructorCallback: usesConstructorCallback)
+                usesConstructorCallback: usesConstructorCallback,
+                allowMultipleRegistrations: allowMultipleRegistrations)
             .generate(),
       );
     }
@@ -272,6 +276,7 @@ class InitMethodGenerator with SharedGeneratorCode {
   final String? scopeName;
   final bool isMicroPackage;
   final bool usesConstructorCallback;
+  final bool allowMultipleRegistrations;
   final Set<ExternalModuleConfig> microPackagesModulesBefore,
       microPackagesModulesAfter;
 
@@ -286,6 +291,7 @@ class InitMethodGenerator with SharedGeneratorCode {
     this.microPackagesModulesBefore = const {},
     this.microPackagesModulesAfter = const {},
     this.usesConstructorCallback = false,
+    this.allowMultipleRegistrations = false,
   })  : assert(microPackagesModulesBefore.isEmpty || scopeName == null),
         dependencies = DependencyList(dependencies: scopeDependencies);
 
@@ -443,6 +449,11 @@ class InitMethodGenerator with SharedGeneratorCode {
                   .returned
                   .statement
             else ...[
+              if (allowMultipleRegistrations && !isMicroPackage)
+                getInstanceRefer
+                    .property('enableRegisteringMultipleInstancesOfOneType')
+                    .call([])
+                    .statement,
               if (!isMicroPackage)
                 if (dependencies.isNotEmpty ||
                     microPackagesModulesAfter.isNotEmpty ||
